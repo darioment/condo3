@@ -1,0 +1,55 @@
+IFS(
+  [Precio] = 
+    SWITCH(
+      LOOKUP([Cliente], "Clientes", "Cliente", "Cantidad de compra"),
+      "Reparto Mayor (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Reparto Mayor (precio en pesos)"),
+      "Reparto Menor (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Reparto Menor (precio en pesos)"),
+      "Bulto mayor (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Bulto mayor (precio en pesos)"),
+      "Bulto Menor (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Bulto Menor (precio en pesos)"),
+      "Kilo (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Kilo (precio en pesos)"),
+      0
+    ),
+  "Correcto",
+
+  [Precio] >
+    SWITCH(
+      LOOKUP([Cliente], "Clientes", "Cliente", "Cantidad de compra"),
+      "Reparto Mayor (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Reparto Mayor (precio en pesos)"),
+      "Reparto Menor (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Reparto Menor (precio en pesos)"),
+      "Bulto mayor (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Bulto mayor (precio en pesos)"),
+      "Bulto Menor (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Bulto Menor (precio en pesos)"),
+      "Kilo (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Kilo (precio en pesos)"),
+      0
+    ),
+  "Mayor",
+
+  [Precio] <
+    SWITCH(
+      LOOKUP([Cliente], "Clientes", "Cliente", "Cantidad de compra"),
+      "Reparto Mayor (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Reparto Mayor (precio en pesos)"),
+      "Reparto Menor (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Reparto Menor (precio en pesos)"),
+      "Bulto mayor (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Bulto mayor (precio en pesos)"),
+      "Bulto Menor (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Bulto Menor (precio en pesos)"),
+      "Kilo (precio en pesos)", LOOKUP([Pedido3], "Precios", "Pedido3", "Kilo (precio en pesos)"),
+      0
+    ),
+  "Menor",
+
+  TRUE, "Desconocido"
+)
+
+
+====== valor del precio
+IF(
+  AND(ISNOTBLANK([Cliente]), ISNOTBLANK([Producto])),
+  SWITCH(
+    UPPER(TRIM(LOOKUP([Cliente], "Clientes", "Cliente", "Cantidad de compra"))),
+    "REPARTO MAYOR", LOOKUP([Producto], "Precios", "_ComputedKey", "Reparto Mayor"),
+    "REPARTO MENOR", LOOKUP([Producto], "Precios", "_ComputedKey", "Reparto Menor"),
+    "BULTO MAYOR", LOOKUP([Producto], "Precios", "_ComputedKey", "Bulto mayor"),
+    "BULTO MENOR", LOOKUP([Producto], "Precios", "_ComputedKey", "Bulto Menor"),
+    "KILO", LOOKUP([Producto], "Precios", "_ComputedKey", "Kilo"),
+    0
+  ),
+  ""
+)

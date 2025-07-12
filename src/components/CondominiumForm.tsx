@@ -18,12 +18,20 @@ const CondominiumForm: React.FC<CondominiumFormProps> = ({ condominium, onSave, 
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }));
+    const { name, value, type, files } = e.target as HTMLInputElement;
+    if (name === 'logo' && files && files[0]) {
+      // Convertir archivo a base64 para vista previa y guardado
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setFormData(prev => ({ ...prev, logo: ev.target?.result as string }));
+      };
+      reader.readAsDataURL(files[0]);
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -33,7 +41,7 @@ const CondominiumForm: React.FC<CondominiumFormProps> = ({ condominium, onSave, 
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-gray-800">
             {condominium ? 'Editar Condominio' : 'Nuevo Condominio'}
@@ -46,7 +54,7 @@ const CondominiumForm: React.FC<CondominiumFormProps> = ({ condominium, onSave, 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pb-4 flex flex-col">
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nombre *
@@ -103,7 +111,62 @@ const CondominiumForm: React.FC<CondominiumFormProps> = ({ condominium, onSave, 
             </label>
           </div>
           
-          <div className="flex justify-end space-x-3">
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Logo
+            </label>
+            <input
+              type="file"
+              name="logo"
+              accept="image/*"
+              onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            />
+            {formData.logo && (
+              <img src={formData.logo} alt="Logo" className="mt-2 h-16 object-contain border rounded bg-white" />
+            )}
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Presidente
+            </label>
+            <input
+              type="text"
+              name="presidente"
+              value={formData.presidente || ''}
+              onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Nombre del presidente"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tesorero
+            </label>
+            <input
+              type="text"
+              name="tesorero"
+              value={formData.tesorero || ''}
+              onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Nombre del tesorero"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Vocal
+            </label>
+            <input
+              type="text"
+              name="vocal"
+              value={formData.vocal || ''}
+              onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Nombre del vocal"
+            />
+          </div>
+          <div className="flex justify-end space-x-3 pt-4 bg-white mt-auto">
             <button
               type="button"
               onClick={onCancel}

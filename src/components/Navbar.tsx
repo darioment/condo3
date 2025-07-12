@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, ChevronDown, Home, DollarSign, Users, Settings, BarChart, Building2, CreditCard } from 'lucide-react';
+import { Menu, X, ChevronDown, Home, DollarSign, Users, Settings, BarChart, Building2, CreditCard, Receipt } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Navbar: React.FC = () => {
@@ -17,9 +17,11 @@ const Navbar: React.FC = () => {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: <Home size={20} /> },
     { name: 'Pagos', path: '/payments', icon: <DollarSign size={20} /> },
+    { name: 'Adeudos', path: '/adeudos', icon: <DollarSign size={20} className="text-red-400" /> },
     { name: 'Cuotas', path: '/payment-types', icon: <CreditCard size={20} /> },
     { name: 'Condominios', path: '/condominiums', icon: <Building2 size={20} /> },
     { name: 'Residentes', path: '/residents', icon: <Users size={20} /> },
+    { name: 'Gastos', path: '/gastos', icon: <Receipt size={20} /> },
     { name: 'Reportes', path: '/reports', icon: <BarChart size={20} /> },
     { name: 'Configuración', path: '/settings', icon: <Settings size={20} /> }
   ];
@@ -96,4 +98,4 @@ const Navbar: React.FC = () => {
   );
 };
 
-export default Navbar;
+export default Navbar; 

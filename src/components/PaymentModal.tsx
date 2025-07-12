@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { Resident, Month, PaymentType } from '../types';
+import { toast } from 'react-hot-toast';
+import { Resident, Month, PaymentType, Payment } from '../types/index';
 import { supabase } from '../lib/supabase';
 
 interface PaymentModalProps {
@@ -12,7 +13,8 @@ interface PaymentModalProps {
   amount: number;
   isPaid: boolean;
   initialPaymentTypeId?: string;
-  onSave: (amount: number, date: Date, paymentTypeId: string) => void;
+  selectedPayment?: Payment | null;
+  onSave: (amount: number, date: Date, paymentTypeId: string, concepto: string) => void;
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -24,16 +26,25 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   amount,
   isPaid,
   initialPaymentTypeId,
+  selectedPayment,
   onSave,
 }) => {
   const [paymentAmount, setPaymentAmount] = useState(amount);
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentTypes, setPaymentTypes] = useState<PaymentType[]>([]);
-  const [selectedPaymentType, setSelectedPaymentType] = useState<string>(initialPaymentTypeId || '');
+  const [selectedPaymentType, setSelectedPaymentType] = useState<string>('');
+  const [concepto, setConcepto] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const monthIndex = month ? ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'].indexOf(month) : 0;
   
-  // Cargar tipos de pago
+  // Actualizar el concepto cuando cambia el pago seleccionado
+  useEffect(() => {
+    if (selectedPayment?.concepto) {
+      setConcepto(selectedPayment.concepto);
+    }
+  }, [selectedPayment]);
+
+  // Cargar tipos de pago una vez al montar el componente
   useEffect(() => {
     const fetchPaymentTypes = async () => {
       try {
@@ -46,28 +57,42 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
         if (error) throw error;
 
-        if (data && data.length > 0) {
+        if (data) {
           setPaymentTypes(data);
-          // Usar el tipo de pago inicial si se proporciona, de lo contrario usar el primero
-          if (!selectedPaymentType) {
-            setSelectedPaymentType(initialPaymentTypeId || data[0].id);
-          }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching payment types:', error);
+        toast.error(`Error al cargar los tipos de cuota: ${error.message}`);
       } finally {
         setLoading(false);
       }
     };
 
     fetchPaymentTypes();
-  }, []);
+  }, []); // Dependencia vacía para que se ejecute solo una vez
+
+  // Establecer el tipo de pago seleccionado cuando cambian paymentTypes o initialPaymentTypeId
+  useEffect(() => {
+    if (paymentTypes.length > 0) {
+      if (initialPaymentTypeId) {
+        // Si estamos editando un pago existente, usar su tipo de cuota
+        setSelectedPaymentType(initialPaymentTypeId);
+      } else if (paymentTypes.length > 0) {
+        // Si no estamos editando, seleccionar el primer tipo de cuota por defecto
+        setSelectedPaymentType(paymentTypes[0].id);
+      }
+    }
+  }, [paymentTypes, initialPaymentTypeId]);
 
   if (!isOpen || !resident || !month) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(paymentAmount, new Date(paymentDate), selectedPaymentType);
+    if (!selectedPaymentType && paymentTypes.length > 0) {
+      toast.error('Por favor selecciona un tipo de pago');
+      return;
+    }
+    onSave(paymentAmount, new Date(paymentDate), selectedPaymentType || paymentTypes[0]?.id || '', concepto);
   };
 
   return (
@@ -91,7 +116,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         
         <div className="mb-4">
           <p className="text-sm text-gray-600 mb-1">Unidad:</p>
-          <p className="font-medium">{resident.unitNumber}</p>
+          <p className="font-medium">{resident.unit_number}</p>
         </div>
         
         <div className="mb-4">
@@ -99,13 +124,30 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
           <p className="font-medium">{month} {year}</p>
         </div>
         
+        {isPaid && (
+          <>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-1">Concepto:</p>
+              <p className="font-medium">{selectedPayment?.concepto || 'Sin concepto'}</p>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-1">Monto:</p>
+              <p className="font-medium">{selectedPayment?.amount.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}</p>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-1">Fecha de Pago:</p>
+              <p className="font-medium">{new Date(selectedPayment?.payment_date || '').toLocaleDateString()}</p>
+            </div>
+          </>
+        )}
+        
         <div className="mb-4">
           <label className="block text-sm text-gray-600 mb-1">Tipo de cuota:</label>
           <select
             className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            value={selectedPaymentType}
+            value={selectedPaymentType || ''}
             onChange={(e) => setSelectedPaymentType(e.target.value)}
-            disabled={loading}
+            disabled={loading || isPaid}
             required
           >
             {paymentTypes.length === 0 ? (
@@ -134,6 +176,19 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 onChange={(e) => setPaymentAmount(parseFloat(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 required
+              />
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Concepto:
+              </label>
+              <input
+                type="text"
+                value={concepto}
+                onChange={(e) => setConcepto(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Ingrese el concepto del pago"
               />
             </div>
             
@@ -169,25 +224,20 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         )}
         
         {isPaid && (
-          <div>
-            <p className="text-gray-600 mb-6">
-              ¿Está seguro que desea eliminar este pago?
-            </p>
-            
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => onSave(0, new Date())}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-              >
-                Eliminar
-              </button>
-            </div>
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => onSave(0, new Date(), initialPaymentTypeId || '', '')}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              Eliminar Pago
+            </button>
           </div>
         )}
       </div>

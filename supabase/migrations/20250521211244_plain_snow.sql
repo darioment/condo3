@@ -47,3 +47,8 @@ SELECT
 FROM residents r
 CROSS JOIN generate_series(1, 5) gs(month)
 WHERE r.unit_number IN ('1', '3', '4', '7', '9');
+
+ALTER TABLE condominiums ADD COLUMN IF NOT EXISTS logo text;
+ALTER TABLE condominiums ADD COLUMN IF NOT EXISTS presidente text;
+ALTER TABLE condominiums ADD COLUMN IF NOT EXISTS tesorero text;
+ALTER TABLE condominiums ADD COLUMN IF NOT EXISTS vocal text;

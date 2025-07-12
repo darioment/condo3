@@ -3,7 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 
 interface ConfirmDialogProps {
   title: string;
-  message: string;
+  description: React.ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
   confirmText?: string;
@@ -12,7 +12,7 @@ interface ConfirmDialogProps {
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   title,
-  message,
+  description,
   onConfirm,
   onCancel,
   confirmText = 'Confirmar',
@@ -20,7 +20,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 }) => {
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[80vh] flex flex-col">
         <div className="flex items-center mb-4">
           <div className="mr-4 bg-yellow-100 p-2 rounded-full">
             <AlertTriangle className="h-6 w-6 text-yellow-600" />
@@ -28,9 +28,11 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
         </div>
         
-        <p className="text-gray-600 mb-6">{message}</p>
+        <div className="text-gray-600 mb-6 overflow-y-auto" style={{ maxHeight: '40vh' }}>
+          {description}
+        </div>
         
-        <div className="flex justify-end space-x-3">
+        <div className="flex justify-end space-x-3 mt-auto">
           <button
             onClick={onCancel}
             className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"

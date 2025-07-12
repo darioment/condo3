@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import React from 'react';
 import { Condominium } from '../types';
 
 interface CondoSelectProps {
@@ -13,37 +12,24 @@ const CondoSelect: React.FC<CondoSelectProps> = ({
   selectedCondominium,
   onSelect,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
   return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-      >
-        <span>{selectedCondominium ? selectedCondominium.name : 'Seleccionar Condominio'}</span>
-        <ChevronDown size={16} className="ml-2" />
-      </button>
-
-      {isOpen && (
-        <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg">
-          <ul className="py-1 max-h-60 overflow-auto">
-            {condominiums.map((condo) => (
-              <li
-                key={condo.id}
-                className="px-4 py-2 text-sm text-gray-700 hover:bg-blue-100 cursor-pointer"
-                onClick={() => {
-                  onSelect(condo);
-                  setIsOpen(false);
-                }}
-              >
-                {condo.name}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
+    <select
+      value={selectedCondominium?.id || ''}
+      onChange={(e) => {
+        const selected = condominiums.find(c => c.id === e.target.value);
+        if (selected) {
+          onSelect(selected);
+        }
+      }}
+      className="border border-gray-300 rounded-md py-2 px-4 bg-white text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+    >
+      <option value="">Seleccionar condominio</option>
+      {condominiums.map(condo => (
+        <option key={condo.id} value={condo.id}>
+          {condo.name}
+        </option>
+      ))}
+    </select>
   );
 };
 

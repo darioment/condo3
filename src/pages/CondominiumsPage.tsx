@@ -58,7 +58,11 @@ const CondominiumsPage: React.FC = () => {
             name: condominiumData.name,
             address: condominiumData.address,
             description: condominiumData.description,
-            is_active: condominiumData.is_active
+            is_active: condominiumData.is_active,
+            logo: condominiumData.logo ?? null,
+            presidente: condominiumData.presidente ?? null,
+            tesorero: condominiumData.tesorero ?? null,
+            vocal: condominiumData.vocal ?? null
           })
           .eq('id', editingCondominium.id)
           .select();
@@ -74,7 +78,7 @@ const CondominiumsPage: React.FC = () => {
       else {
         const { data, error } = await supabase
           .from('condominiums')
-          .insert([condominiumData])
+          .insert([{ ...condominiumData, logo: condominiumData.logo ?? null, presidente: condominiumData.presidente ?? null, tesorero: condominiumData.tesorero ?? null, vocal: condominiumData.vocal ?? null }])
           .select();
           
         if (error) throw error;
@@ -286,7 +290,7 @@ const CondominiumsPage: React.FC = () => {
       {showDeleteConfirm && condominiumToDelete && (
         <ConfirmDialog
           title="Eliminar Condominio"
-          message={`¿Está seguro que desea eliminar el condominio ${condominiumToDelete.name}? Esta acción no se puede deshacer.`}
+          description={<span>¿Está seguro que desea eliminar el condominio "{condominiumToDelete.name}"? Esta acción no se puede deshacer.</span>}
           onConfirm={deleteCondominium}
           onCancel={() => {
             setShowDeleteConfirm(false);

@@ -30,6 +30,34 @@
       - `status` (text)
       - `created_at` (timestamp)
 
+    - `expense_categories`: Represents main categories of expenses
+      - `id` (UUID, primary key)
+      - `condominium_id` (UUID, foreign key)
+      - `name` (TEXT)
+      - `order` (INTEGER)
+      - `created_at` (TIMESTAMP WITH TIME ZONE)
+      - `updated_at` (TIMESTAMP WITH TIME ZONE)
+
+    - `expense_concepts`: Represents concepts within each category
+      - `id` (UUID, primary key)
+      - `category_id` (UUID, foreign key)
+      - `name` (TEXT)
+      - `order` (INTEGER)
+      - `created_at` (TIMESTAMP WITH TIME ZONE)
+      - `updated_at` (TIMESTAMP WITH TIME ZONE)
+
+    - `expenses`: Represents individual expense records
+      - `id` (UUID, primary key)
+      - `condominium_id` (UUID, foreign key)
+      - `concept_id` (UUID, foreign key)
+      - `description` (TEXT)
+      - `amount` (NUMERIC)
+      - `expense_date` (DATE)
+      - `year` (INTEGER)
+      - `month` (TEXT)
+      - `created_at` (TIMESTAMP WITH TIME ZONE)
+      - `updated_at` (TIMESTAMP WITH TIME ZONE)
+
   2. Security
     - Enable RLS on all tables
     - Add policies for authenticated users
@@ -70,10 +98,47 @@ CREATE TABLE IF NOT EXISTS payments (
   created_at timestamptz DEFAULT now()
 );
 
+-- Create expense_categories table
+CREATE TABLE expense_categories (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  condominium_id UUID REFERENCES condominiums(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  "order" INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create expense_concepts table (formerly expense_subcategories)
+CREATE TABLE expense_concepts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  category_id UUID REFERENCES expense_categories(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  "order" INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create expenses table
+CREATE TABLE expenses (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  condominium_id UUID REFERENCES condominiums(id) ON DELETE CASCADE, -- Keeping for direct queries/RLS
+  concept_id UUID REFERENCES expense_concepts(id) ON DELETE CASCADE,
+  description TEXT,
+  amount NUMERIC NOT NULL,
+  expense_date DATE NOT NULL,
+  year INTEGER NOT NULL,
+  month TEXT NOT NULL, -- Using TEXT for month abbreviation (ENE, FEB, etc.)
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Enable Row Level Security
 ALTER TABLE condominiums ENABLE ROW LEVEL SECURITY;
 ALTER TABLE residents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE expense_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE expense_concepts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 
 -- Create policies
 CREATE POLICY "Allow authenticated users to read condominiums"
@@ -106,3 +171,7 @@ CREATE POLICY "Allow authenticated users to update payments"
   TO authenticated
   USING (true)
   WITH CHECK (true);
+
+CREATE POLICY "Enable all access for authenticated users" ON expense_categories USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all access for authenticated users" ON expense_concepts USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all access for authenticated users" ON expenses USING (auth.role() = 'authenticated');

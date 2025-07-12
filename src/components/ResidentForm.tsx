@@ -3,12 +3,13 @@ import { X } from 'lucide-react';
 import { Resident } from '../types';
 
 interface ResidentFormProps {
-  resident?: Resident;
+  condominiumId: string;
+  resident?: Resident | null;
   onSave: (resident: Partial<Resident>) => void;
-  onCancel: () => void;
+  onClose: () => void;
 }
 
-const ResidentForm: React.FC<ResidentFormProps> = ({ resident, onSave, onCancel }) => {
+const ResidentForm: React.FC<ResidentFormProps> = ({ resident, onSave, onClose, condominiumId }) => {
   const [formData, setFormData] = useState<Partial<Resident>>({
     name: '',
     unit_number: '',
@@ -17,9 +18,26 @@ const ResidentForm: React.FC<ResidentFormProps> = ({ resident, onSave, onCancel 
     account_number: '',
     email: '',
     phone: '',
-    is_active: true,
-    ...resident
+    is_active: true
   });
+
+  useEffect(() => {
+    if (resident) {
+      console.log('Cargando datos del residente:', resident);
+      setFormData({
+        id: resident.id,
+        name: resident.name || '',
+        unit_number: resident.unit_number || '',
+        contact_info: resident.contact_info || '',
+        bank_info: resident.bank_info || '',
+        account_number: resident.account_number || '',
+        email: resident.email || '',
+        phone: resident.phone || '',
+        is_active: resident.is_active ?? true,
+        condominium_id: condominiumId
+      });
+    }
+  }, [resident, condominiumId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -30,9 +48,43 @@ const ResidentForm: React.FC<ResidentFormProps> = ({ resident, onSave, onCancel 
     }));
   };
 
+  const validateForm = (): boolean => {
+    if (!formData.name?.trim()) {
+      alert('El nombre es requerido');
+      return false;
+    }
+    if (!formData.unit_number?.trim()) {
+      alert('El número de unidad es requerido');
+      return false;
+    }
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      alert('El email no es válido');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    console.log('Enviando datos del formulario:', formData);
+    
+    const dataToSave = {
+      ...formData,
+      condominium_id: condominiumId,
+    };
+
+    Object.keys(dataToSave).forEach(key => {
+      if (dataToSave[key as keyof typeof dataToSave] === '') {
+        dataToSave[key as keyof typeof dataToSave] = null;
+      }
+    });
+
+    onSave(dataToSave);
   };
 
   return (
@@ -43,7 +95,7 @@ const ResidentForm: React.FC<ResidentFormProps> = ({ resident, onSave, onCancel 
             {resident ? 'Editar Residente' : 'Nuevo Residente'}
           </h2>
           <button 
-            onClick={onCancel}
+            onClick={onClose}
             className="text-gray-500 hover:text-gray-700 focus:outline-none"
           >
             <X size={24} />
@@ -162,7 +214,7 @@ const ResidentForm: React.FC<ResidentFormProps> = ({ resident, onSave, onCancel 
           <div className="flex justify-end space-x-3">
             <button
               type="button"
-              onClick={onCancel}
+              onClick={onClose}
               className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               Cancelar
