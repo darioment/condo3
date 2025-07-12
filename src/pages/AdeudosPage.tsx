@@ -5,7 +5,7 @@ import CondoSelect from '../components/CondoSelect';
 import { toast } from 'react-toastify';
 import { Loader2, Filter } from 'lucide-react';
 import { MONTHS } from '../types';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 
 const AdeudosPage: React.FC = () => {
   const [condominiums, setCondominiums] = useState<Condominium[]>([]);
@@ -225,25 +225,14 @@ const AdeudosPage: React.FC = () => {
 
 const AdeudoDetalleResidente: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
-  const year = searchParams.get('year') || new Date().getFullYear();
-  const month = decodeURIComponent(searchParams.get('month') || MONTHS[0]);
   const [resident, setResident] = useState<Resident | null>(null);
   const [condo, setCondo] = useState<Condominium | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [paymentTypes, setPaymentTypes] = useState<PaymentType[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Debug: Log los parámetros recibidos
-  console.log('URL Params - year:', year, 'month:', month, 'id:', id);
-  console.log('Raw search params:', searchParams.toString());
-
   useEffect(() => {
     const fetchData = async () => {
-      if (!id) return;
-      
-      console.log('Fetching data with params:', { id, year, month });
-      
       setLoading(true);
       try {
         // Obtener residente
@@ -254,7 +243,6 @@ const AdeudoDetalleResidente: React.FC = () => {
           .maybeSingle();
         if (residentError) throw residentError;
         setResident(residentData);
-        
         // Obtener condominio
         if (residentData?.condominium_id) {
           const { data: condoData, error: condoError } = await supabase
@@ -265,7 +253,6 @@ const AdeudoDetalleResidente: React.FC = () => {
           if (condoError) throw condoError;
           setCondo(condoData);
         }
-        
         // Obtener tipos de cuota
         const { data: ptData, error: ptError } = await supabase
           .from('payment_types')
@@ -274,38 +261,21 @@ const AdeudoDetalleResidente: React.FC = () => {
           .eq('condominium_id', residentData.condominium_id);
         if (ptError) throw ptError;
         setPaymentTypes(ptData || []);
-        
-        // Obtener pagos usando month_index para filtrar desde el mes especificado
-        console.log('Fetching payments for:', { residentId: id, year });
-        
-        // Convertir el mes de la URL a formato abreviado si es necesario
-        const monthAbbrev = month.length > 3 ? 
-          MONTHS.find(m => month.toLowerCase().includes(m.toLowerCase())) || MONTHS[0] : 
-          month as Month;
-        const startMonthIndex = MONTHS.indexOf(monthAbbrev);
-        console.log('Month conversion:', { originalMonth: month, monthAbbrev, startMonthIndex });
-        
+        // Obtener pagos
         const { data: payData, error: payError } = await supabase
           .from('payments')
           .select('*')
-          .eq('resident_id', id)
-          .eq('year', year)
-          .gte('month_index', startMonthIndex);
-        if (payError) {
-          console.error('Payment fetch error:', payError);
-          throw payError;
-        }
-        
-        console.log('Payments found:', { total: payData?.length });
+          .eq('resident_id', id);
+        if (payError) throw payError;
         setPayments(payData || []);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        // Manejo de error
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [id, year, month]);
+  }, [id]);
 
   if (loading) {
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin text-blue-500" /></div>;
@@ -315,17 +285,10 @@ const AdeudoDetalleResidente: React.FC = () => {
   }
 
   // Calcular adeudos por tipo de cuota y mes
-  const getAdeudos = (currentYear: number) => {
-    // Convertir el mes de la URL a formato abreviado si es necesario
-    const monthAbbrev = month.length > 3 ? 
-      MONTHS.find(m => month.toLowerCase().includes(m.toLowerCase())) || MONTHS[0] : 
-      month as Month;
-    
+  const getAdeudos = () => {
     return paymentTypes.map(pt => {
-      const paidMonths = payments.filter(p => p.payment_type_id === pt.id && p.year === currentYear).map(p => p.month);
-      const startMonthIndex = MONTHS.indexOf(monthAbbrev);
-      const monthsToCheck = MONTHS.filter((m, idx) => idx >= startMonthIndex);
-      const adeudosMes = monthsToCheck.map(m => !paidMonths.includes(m));
+      const paidMonths = payments.filter(p => p.payment_type_id === pt.id).map(p => p.month);
+      const adeudosMes = MONTHS.map(month => !paidMonths.includes(month));
       return {
         tipo: pt,
         adeudosMes
@@ -341,37 +304,28 @@ const AdeudoDetalleResidente: React.FC = () => {
         <span className="font-semibold">Residente:</span> {resident.name} <br />
         <span className="font-semibold">Unidad:</span> {resident.unit_number} <br />
         {condo && <><span className="font-semibold">Condominio:</span> {condo.name}</>}<br />
-        <span className="font-semibold">Año:</span> {year}
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Cuota</th>
-              {(() => {
-                const monthAbbrev = month.length > 3 ? 
-                  MONTHS.find(m => month.toLowerCase().includes(m.toLowerCase())) || MONTHS[0] : 
-                  month as Month;
-                return MONTHS.filter((m, idx) => idx >= MONTHS.indexOf(monthAbbrev)).map(m => (
-                  <th key={m} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{m}</th>
-                ));
-              })()}
+              {MONTHS.map(month => (
+                <th key={month} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{month}</th>
+              ))}
               <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Meses</th>
               <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Monto Adeudado</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {getAdeudos(Number(year)).map(({ tipo, adeudosMes }) => {
+            {getAdeudos().map(({ tipo, adeudosMes }) => {
               const totalMeses = adeudosMes.filter(Boolean).length;
               const monto = totalMeses * (tipo.cuota_mensual || 0);
-              const monthAbbrev = month.length > 3 ? 
-                MONTHS.find(m => month.toLowerCase().includes(m.toLowerCase())) || MONTHS[0] : 
-                month as Month;
               return (
                 <tr key={tipo.id}>
                   <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{tipo.name}</td>
-                  {MONTHS.filter((m, idx) => idx >= MONTHS.indexOf(monthAbbrev)).map((m, i) => (
-                    <td key={i} className={`px-2 py-2 text-center text-sm ${adeudosMes[i] ? 'bg-red-100 text-red-700 font-bold' : 'bg-green-50 text-green-600'}`}>{adeudosMes[i] ? '●' : ''}</td>
+                  {adeudosMes.map((adeuda, i) => (
+                    <td key={i} className={`px-2 py-2 text-center text-sm ${adeuda ? 'bg-red-100 text-red-700 font-bold' : 'bg-green-50 text-green-600'}`}>{adeuda ? '●' : ''}</td>
                   ))}
                   <td className="px-4 py-2 text-center text-sm font-bold text-red-700">{totalMeses}</td>
                   <td className="px-4 py-2 text-center text-sm font-bold text-blue-700">{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(monto)}</td>
