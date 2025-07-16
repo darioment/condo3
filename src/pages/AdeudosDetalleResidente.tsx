@@ -14,7 +14,9 @@ const AdeudosDetalleResidente: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState<number>(Number(searchParams.get('year')) || currentYear);
-  const [month, setMonth] = useState<Month | undefined>(searchParams.get('month') as Month || undefined);
+  const [month, setMonth] = useState<Month | undefined>(decodeURIComponent(searchParams.get('month') || '') as Month || undefined);
+  
+  console.log('AdeudosDetalleResidente - searchParams:', searchParams.toString(), 'year:', year, 'month:', month);
   const [resident, setResident] = useState<Resident | null>(null);
   const [condo, setCondo] = useState<Condominium | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -27,8 +29,12 @@ const AdeudosDetalleResidente: React.FC = () => {
   const autoSendEmail = searchParams.get('autoSendEmail') === '1';
 
   useEffect(() => {
-    setSearchParams({ year: String(year) });
-  }, [year, setSearchParams]);
+    const params: { year: string; month?: string } = { year: String(year) };
+    if (month) {
+      params.month = month;
+    }
+    setSearchParams(params);
+  }, [year, month, setSearchParams]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -67,22 +73,36 @@ const AdeudosDetalleResidente: React.FC = () => {
           .eq('resident_id', id);
         if (rptError) throw rptError;
         setResidentPaymentTypes(rptData || []);
-        // Obtener pagos SOLO del año seleccionado y a partir del mes seleccionado
-        let paymentsQuery = supabase
+        // Obtener pagos del año y filtrar después
+        console.log('Fetching payments for:', { residentId: id, year, month });
+        
+        const { data: payData, error: payError } = await supabase
           .from('payments')
           .select('*')
           .eq('resident_id', id)
           .eq('year', year);
-
-        if (month) {
-          paymentsQuery = paymentsQuery.gte('month_index', MONTHS.indexOf(month));
+        
+        if (payError) {
+          console.error('Payment fetch error:', payError);
+          throw payError;
         }
-
-        const { data: payData, error: payError } = await paymentsQuery;
-        if (payError) throw payError;
-        setPayments(payData || []);
+        
+        // Filtrar pagos desde el mes especificado
+        let filteredPayments = payData || [];
+        if (month) {
+          const startMonthIndex = MONTHS.indexOf(month);
+          console.log('Month filtering:', { month, startMonthIndex });
+          filteredPayments = (payData || []).filter(payment => {
+            const paymentMonthIndex = MONTHS.indexOf(payment.month);
+            return paymentMonthIndex >= startMonthIndex;
+          });
+        }
+        
+        console.log('Payments found:', { total: payData?.length, filtered: filteredPayments.length });
+        setPayments(filteredPayments);
       } catch (error) {
-        // Manejo de error
+        console.error('Error fetching data:', error);
+        toast.error('Error al cargar los datos');
       } finally {
         setLoading(false);
       }

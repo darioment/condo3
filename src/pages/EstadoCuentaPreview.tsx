@@ -5,6 +5,7 @@ import { Resident, Payment, PaymentType, Month, Condominium } from '../types';
 import { MONTHS } from '../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { toast } from 'react-hot-toast';
 
 const EstadoCuentaPreview: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,13 +52,36 @@ const EstadoCuentaPreview: React.FC = () => {
           .select('payment_type_id')
           .eq('resident_id', id);
         setResidentPaymentTypes(rptData || []);
-        const { data: payData } = await supabase
+        // Obtener pagos del año y filtrar después
+        console.log('EstadoCuentaPreview - Fetching payments for:', { residentId: id, year, month });
+        
+        const { data: payData, error: payError } = await supabase
           .from('payments')
           .select('*')
           .eq('resident_id', id)
-          .eq('year', year)
-          .gte('month_index', month ? MONTHS.indexOf(month) : 0);
-        setPayments(payData || []);
+          .eq('year', year);
+        
+        if (payError) {
+          console.error('Payment fetch error:', payError);
+          throw payError;
+        }
+        
+        // Filtrar pagos desde el mes especificado
+        let filteredPayments = payData || [];
+        if (month) {
+          const startMonthIndex = MONTHS.indexOf(month);
+          console.log('EstadoCuentaPreview - Month filtering:', { month, startMonthIndex });
+          filteredPayments = (payData || []).filter(payment => {
+            const paymentMonthIndex = MONTHS.indexOf(payment.month);
+            return paymentMonthIndex >= startMonthIndex;
+          });
+        }
+        
+        console.log('EstadoCuentaPreview - Payments found:', { total: payData?.length, filtered: filteredPayments.length });
+        setPayments(filteredPayments);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Error al cargar los datos');
       } finally {
         setLoading(false);
       }

@@ -32,6 +32,17 @@ const Dashboard: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState<number>(initialYear);
   const [selectedMonth, setSelectedMonth] = useState<Month>(initialMonth);
   const [residentCount, setResidentCount] = useState<number>(0);
+
+  // Debug: Log el valor de selectedMonth
+  console.log('Dashboard render - selectedMonth:', selectedMonth, 'initialMonth:', initialMonth, 'localStorage month:', localStorage.getItem('dashboard_selectedMonth'));
+
+  // Guardar selectedMonth en localStorage cuando cambie
+  useEffect(() => {
+    if (selectedMonth) {
+      localStorage.setItem('dashboard_selectedMonth', selectedMonth);
+      console.log('Saved selectedMonth to localStorage:', selectedMonth);
+    }
+  }, [selectedMonth]);
   const [residentDebts, setResidentDebts] = useState<{ resident: Resident; subtotales: { [paymentTypeId: string]: number }; amountOwed: number }[]>([]);
   const [debtLoading, setDebtLoading] = useState(false);
   const [paymentTypes, setPaymentTypes] = useState<PaymentType[]>([]);
@@ -553,7 +564,20 @@ const Dashboard: React.FC = () => {
                           >
                             <MailIcon size={20} />
                           </button>
-                          <Link to={`/adeudos/detalle/${resident.id}?year=${selectedYear}&month=${selectedMonth}`} className="text-blue-700 underline hover:text-blue-900">
+                          <Link 
+                            to={`/adeudos/detalle/${resident.id}?year=${selectedYear}&month=${selectedMonth || MONTHS[0]}`} 
+                            className="text-blue-700 underline hover:text-blue-900"
+                            onClick={() => {
+                              const monthToUse = selectedMonth || MONTHS[0];
+                              console.log('Dashboard link clicked:', { 
+                                selectedYear, 
+                                selectedMonth, 
+                                monthToUse,
+                                url: `/adeudos/detalle/${resident.id}?year=${selectedYear}&month=${monthToUse}`,
+                                location: window.location.href
+                              });
+                            }}
+                          >
                             {resident.name}
                           </Link>
                         </td>
