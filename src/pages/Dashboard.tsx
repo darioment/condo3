@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Users, Home, TrendingUp, Mail as MailIcon } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import { supabase } from '../lib/supabase';
 import { Condominium, MONTHS, Payment, Resident, PaymentType, Month } from '../types';
 import CondoSelect from '../components/CondoSelect';
@@ -44,6 +45,7 @@ const Dashboard: React.FC = () => {
     }
   }, [selectedMonth]);
   const [residentDebts, setResidentDebts] = useState<{ resident: Resident; subtotales: { [paymentTypeId: string]: number }; amountOwed: number }[]>([]);
+  const [residentPayments, setResidentPayments] = useState<{ residentId: string; totalPaid: number }[]>([]);
   const [debtLoading, setDebtLoading] = useState(false);
   const [paymentTypes, setPaymentTypes] = useState<PaymentType[]>([]);
   const [paymentsGlobal, setPaymentsGlobal] = useState<Payment[]>([]);
@@ -199,7 +201,16 @@ const Dashboard: React.FC = () => {
           const amountOwed = Object.values(subtotales).reduce((a, b) => a + b, 0);
           return { resident, subtotales, amountOwed };
         });
+
+        const residentPaymentsData = (residentsData || []).map((resident: Resident) => {
+          const totalPaid = paymentsGlobal
+            .filter(p => p.resident_id === resident.id && p.status === 'paid')
+            .reduce((sum, p) => sum + p.amount, 0);
+          return { residentId: resident.id, totalPaid };
+        });
+
         setResidentDebts(debts);
+        setResidentPayments(residentPaymentsData);
         setPaymentTypes((paymentTypes || []) as PaymentType[]);
         setResidentPaymentTypes(residentPaymentTypes || []);
       } catch (error: any) {
@@ -330,6 +341,33 @@ const Dashboard: React.FC = () => {
   ) => {
     setEmailData({ resident, subtotales, amountOwed });
     setShowEmailModal(true);
+  };
+
+  const handleSendWhatsApp = async (resident: Resident, amountOwed: number) => {
+    if (!resident.phone) {
+      toast.error("El residente no tiene un número de teléfono registrado.");
+      return;
+    }
+
+    const totalPaid = residentPayments.find(rp => rp.residentId === resident.id)?.totalPaid || 0;
+
+    const adeudosDetalleUrl = `${window.location.origin}/estado-cuenta/${resident.id}?year=${selectedYear}&month=${selectedMonth || MONTHS[0]}`;
+    const webhookUrl = `https://n8n.usoreal.com/webhook/condo?phone=${resident.phone}&name=${encodeURIComponent(resident.name)}&totalAdeudos=${amountOwed}&totalPagos=${totalPaid}&adeudosUrl=${encodeURIComponent(adeudosDetalleUrl)}`;
+
+    try {
+      const response = await fetch(webhookUrl, {
+        method: 'GET',
+      });
+
+      if (response.ok) {
+        toast.success("Mensaje de WhatsApp enviado exitosamente.");
+      } else {
+        toast.error("Error al enviar el mensaje de WhatsApp.");
+      }
+    } catch (error) {
+      console.error("Error sending WhatsApp message:", error);
+      toast.error("Error de red al enviar el mensaje de WhatsApp.");
+    }
   };
 
   const handleConfirmSendEmail = () => {
@@ -540,6 +578,7 @@ const Dashboard: React.FC = () => {
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Residente</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">WhatsApp</th>
                     {paymentTypes.map((pt: PaymentType) => (
                       <th key={pt.id} className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{pt.name}</th>
                     ))}
@@ -580,6 +619,16 @@ const Dashboard: React.FC = () => {
                           >
                             {resident.name}
                           </Link>
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                          <button
+                            onClick={() => handleSendWhatsApp(resident, amountOwed)}
+                            title="Enviar mensaje de WhatsApp"
+                            className="text-green-500 hover:text-green-700"
+                            disabled={!resident.phone}
+                          >
+                            <FaWhatsapp size={20} />
+                          </button>
                         </td>
                         {paymentTypes.map((pt: PaymentType) => (
                           <td key={pt.id} className="px-4 py-2 text-center text-sm font-bold text-blue-700">
