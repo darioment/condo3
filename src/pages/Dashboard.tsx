@@ -352,7 +352,8 @@ const Dashboard: React.FC = () => {
     const totalPaid = residentPayments.find(rp => rp.residentId === resident.id)?.totalPaid || 0;
 
     const adeudosDetalleUrl = `${window.location.origin}/estado-cuenta/${resident.id}?year=${selectedYear}&month=${selectedMonth || MONTHS[0]}`;
-    const webhookUrl = `https://n8n.usoreal.com/webhook/condo?phone=${resident.phone}&name=${encodeURIComponent(resident.name)}&totalAdeudos=${amountOwed}&totalPagos=${totalPaid}&adeudosUrl=${encodeURIComponent(adeudosDetalleUrl)}`;
+    //const webhookUrl = `http://n8n.usoreal.com/webhook/condo?phone=${resident.phone}&name=${encodeURIComponent(resident.name)}&totalAdeudos=${amountOwed}&totalPagos=${totalPaid}&adeudosUrl=${encodeURIComponent(adeudosDetalleUrl)}`;
+const webhookUrl = `https://n8n.usoreal.com/webhook/condo?phone=${resident.phone}&name=${encodeURIComponent(resident.name)}&totalAdeudos=${amountOwed}&totalPagos=${totalPaid}&adeudosUrl=${encodeURIComponent(adeudosDetalleUrl)}`;
 
     try {
       const response = await fetch(webhookUrl, {
