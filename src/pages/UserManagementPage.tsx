@@ -7,7 +7,12 @@ import UserForm from '../components/UserForm';
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
 import toast from 'react-hot-toast';
 
+import { useAuth } from '../contexts/AuthContext';
+
 const UserManagementPage: React.FC = () => {
+  const { user } = useAuth();
+  const isViewer = user?.role === 'viewer';
+
   const [users, setUsers] = useState<DashboardUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,11 +53,13 @@ const UserManagementPage: React.FC = () => {
   };
 
   const handleAddUser = () => {
+    if (isViewer) return;
     setEditingUser(null);
     setShowUserForm(true);
   };
 
   const handleEditUser = (user: DashboardUser) => {
+    if (isViewer) return;
     setEditingUser(user);
     setShowUserForm(true);
   };
@@ -83,6 +90,7 @@ const UserManagementPage: React.FC = () => {
   };
 
   const handleDeleteUser = (user: DashboardUser) => {
+    if (isViewer) return;
     setDeletingUser(user);
     setShowDeleteDialog(true);
   };
@@ -137,7 +145,8 @@ const UserManagementPage: React.FC = () => {
             
             <button
               onClick={handleAddUser}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              disabled={isViewer}
+              className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors ${isViewer ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <Plus className="h-4 w-4 mr-2" />
               Agregar Usuario
@@ -219,6 +228,7 @@ const UserManagementPage: React.FC = () => {
         loading={loading}
         onEdit={handleEditUser}
         onDelete={handleDeleteUser}
+        isViewer={isViewer}
       />
 
       {/* User Form Modal */}

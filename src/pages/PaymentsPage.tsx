@@ -8,7 +8,12 @@ import { toast } from 'react-toastify';
 import { Loader2, Filter, Download, Upload } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
+import { useAuth } from '../contexts/AuthContext';
+
 const PaymentsPage: React.FC = () => {
+  const { user } = useAuth();
+  const isViewer = user?.role === 'viewer';
+
   const [condominiums, setCondominiums] = useState<Condominium[]>([]);
   const [selectedCondo, setSelectedCondo] = useState<Condominium | null>(null);
   const [residents, setResidents] = useState<Resident[]>([]);
@@ -623,7 +628,7 @@ const PaymentsPage: React.FC = () => {
               <span>Exportar</span>
             </button>
             <label 
-              className="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center text-sm cursor-pointer"
+              className={`px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center text-sm cursor-pointer ${isViewer ? 'opacity-50 cursor-not-allowed' : ''}`}
               title="Importar desde Excel"
             >
               <Upload size={16} className="mr-1" />
@@ -634,6 +639,7 @@ const PaymentsPage: React.FC = () => {
                 onChange={handleFileImport}
                 className="hidden"
                 ref={fileInputRef}
+                disabled={isViewer}
               />
             </label>
           </div>
@@ -744,6 +750,7 @@ const PaymentsPage: React.FC = () => {
                           [p.month]: (acc[p.month] || 0) + (p.amount || 0)
                         }), {} as Record<string, number>)}
                       onDeleteResidentPayments={handleDeleteResidentPayments}
+                      isViewer={isViewer}
                     />
                   ))}
                   <tr>

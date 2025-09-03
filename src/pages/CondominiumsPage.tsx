@@ -7,7 +7,12 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { supabase } from '../lib/supabase';
 import { toast } from 'react-toastify';
 
+import { useAuth } from '../contexts/AuthContext';
+
 const CondominiumsPage: React.FC = () => {
+  const { user } = useAuth();
+  const isViewer = user?.role === 'viewer';
+
   const [condominiums, setCondominiums] = useState<Condominium[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -147,12 +152,14 @@ const CondominiumsPage: React.FC = () => {
   
   // Abrir formulario para editar
   const handleEdit = (condominium: Condominium) => {
+    if (isViewer) return;
     setEditingCondominium(condominium);
     setShowForm(true);
   };
   
   // Abrir diálogo de confirmación para eliminar
   const handleDelete = (condominium: Condominium) => {
+    if (isViewer) return;
     setCondominiumToDelete(condominium);
     setShowDeleteConfirm(true);
   };
@@ -195,6 +202,7 @@ const CondominiumsPage: React.FC = () => {
           <button 
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
             onClick={() => setShowForm(true)}
+            disabled={isViewer}
           >
             <Plus size={18} className="mr-1" />
             <span>Nuevo</span>
@@ -225,12 +233,14 @@ const CondominiumsPage: React.FC = () => {
                     <button 
                       className="text-blue-600 hover:text-blue-900 focus:outline-none"
                       onClick={() => handleEdit(condo)}
+                      disabled={isViewer}
                     >
                       <Edit size={18} />
                     </button>
                     <button 
                       className="text-red-600 hover:text-red-900 focus:outline-none"
                       onClick={() => handleDelete(condo)}
+                      disabled={isViewer}
                     >
                       <Trash2 size={18} />
                     </button>

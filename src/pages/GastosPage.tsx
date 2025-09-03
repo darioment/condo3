@@ -12,7 +12,12 @@ import * as XLSX from 'xlsx';
 import ConceptoForm from '../components/ConceptoForm';
 import { useNavigate } from 'react-router-dom';
 
+import { useAuth } from '../contexts/AuthContext';
+
 const GastosPage: React.FC = () => {
+  const { user } = useAuth();
+  const isViewer = user?.role === 'viewer';
+
   const [condominiums, setCondominiums] = useState<Condominium[]>([]);
   const [selectedCondo, setSelectedCondo] = useState<Condominium | null>(null);
   const [conceptos, setConceptos] = useState<Concepto[]>([]);
@@ -825,7 +830,7 @@ const GastosPage: React.FC = () => {
               <span>Exportar</span>
             </button>
             <label 
-              className="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center text-sm cursor-pointer"
+              className={`px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center text-sm cursor-pointer ${isViewer ? 'opacity-50 cursor-not-allowed' : ''}`}
               title="Importar desde Excel"
             >
               <Upload size={16} className="mr-1" />
@@ -836,20 +841,23 @@ const GastosPage: React.FC = () => {
                 onChange={handleFileImport}
                 className="hidden"
                 ref={fileInputRef}
+                disabled={isViewer}
               />
             </label>
             <button
               onClick={() => navigate('/gasto-tipos')}
-              className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center text-sm"
+              className={`px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center text-sm ${isViewer ? 'opacity-50 cursor-not-allowed' : ''}`}
               title="Gestionar tipos de gasto"
+              disabled={isViewer}
             >
               <Settings size={16} className="mr-1" />
               <span>Tipos de Gasto</span>
             </button>
             <button
               onClick={() => navigate('/conceptos')}
-              className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center text-sm"
+              className={`px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center text-sm ${isViewer ? 'opacity-50 cursor-not-allowed' : ''}`}
               title="Gestionar conceptos"
+              disabled={isViewer}
             >
               <Plus size={16} className="mr-1" />
               <span>Conceptos</span>
@@ -963,6 +971,7 @@ const GastosPage: React.FC = () => {
                         }), {} as Record<string, number>)}
                       onDeleteConceptoGastos={handleDeleteConceptoGastos}
                       onEditConcepto={handleEditConcepto}
+                      isViewer={isViewer}
                     />
                   ))}
                 </tbody>

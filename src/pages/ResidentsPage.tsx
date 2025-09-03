@@ -9,7 +9,12 @@ import { supabase } from '../lib/supabase';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 
+import { useAuth } from '../contexts/AuthContext';
+
 const ResidentsPage: React.FC = () => {
+  const { user } = useAuth();
+  const isViewer = user?.role === 'viewer';
+
   const [selectedCondo, setSelectedCondo] = useState<Condominium | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [residents, setResidents] = useState<Resident[]>([]);
@@ -246,12 +251,14 @@ const ResidentsPage: React.FC = () => {
   
   // Abrir formulario para editar
   const handleEdit = (resident: Resident) => {
+    if (isViewer) return;
     setEditingResident(resident);
     setShowForm(true);
   };
   
   // Abrir diálogo de confirmación para eliminar
   const handleDelete = (resident: Resident) => {
+    if (isViewer) return;
     setResidentToDelete(resident);
     setShowDeleteConfirm(true);
   };
@@ -497,7 +504,7 @@ const ResidentsPage: React.FC = () => {
                   <span>Exportar</span>
                 </button>
                 <label 
-                  className="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center text-sm cursor-pointer"
+                  className={`px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center text-sm cursor-pointer ${isViewer ? 'opacity-50 cursor-not-allowed' : ''}`}
                   title="Importar desde Excel"
                 >
                   <Upload size={16} className="mr-1" />
@@ -508,11 +515,13 @@ const ResidentsPage: React.FC = () => {
                     onChange={handleFileImport}
                     className="hidden"
                     ref={fileInputRef}
+                    disabled={isViewer}
                   />
                 </label>
                 <button 
                   className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center text-sm"
                   onClick={() => setShowForm(true)}
+                  disabled={isViewer}
                 >
                   <Plus size={16} className="mr-1" />
                   <span>Nuevo</span>
@@ -568,12 +577,14 @@ const ResidentsPage: React.FC = () => {
                         <button 
                           className="text-blue-600 hover:text-blue-900 mr-3 focus:outline-none"
                           onClick={() => handleEdit(resident)}
+                          disabled={isViewer}
                         >
                           <Edit size={18} />
                         </button>
                         <button 
                           className="text-red-600 hover:text-red-900 focus:outline-none"
                           onClick={() => handleDelete(resident)}
+                          disabled={isViewer}
                         >
                           <Trash2 size={18} />
                         </button>

@@ -12,6 +12,7 @@ interface ResidentRowProps {
   totalAmount?: number;
   monthlyTotals?: Record<string, number>;
   onDeleteResidentPayments: (residentId: string, residentName: string) => void;
+  isViewer?: boolean;
 }
 
 const ResidentRow: React.FC<ResidentRowProps> = ({
@@ -21,7 +22,8 @@ const ResidentRow: React.FC<ResidentRowProps> = ({
   onPaymentClick,
   totalAmount = 0,
   monthlyTotals = {},
-  onDeleteResidentPayments
+  onDeleteResidentPayments,
+  isViewer
 }) => {
   // Create a map of payments by month for quick lookup
   const paymentsByMonth = payments.reduce((acc, payment) => {
@@ -51,6 +53,7 @@ const ResidentRow: React.FC<ResidentRowProps> = ({
           }}
           className="text-red-600 hover:text-red-800 opacity-0 group-hover:opacity-100 transition-opacity"
           title={`Eliminar todos los pagos de ${resident.name} para este año`}
+          disabled={isViewer}
         >
           <Trash2 size={18} />
         </button>
@@ -65,8 +68,8 @@ const ResidentRow: React.FC<ResidentRowProps> = ({
         return (
           <td 
             key={month} 
-            onClick={() => onPaymentClick(resident, month, isPaid)}
-            className="px-3 py-4 whitespace-nowrap text-sm text-center cursor-pointer border-l border-gray-100"
+            onClick={() => !isViewer && onPaymentClick(resident, month, isPaid)}
+            className={`px-3 py-4 whitespace-nowrap text-sm text-center border-l border-gray-100 ${!isViewer ? 'cursor-pointer' : ''}`}
           >
             <PaymentStatus isPaid={isPaid} amount={payment?.amount} />
             {monthTotal > 0 && (

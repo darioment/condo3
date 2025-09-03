@@ -3,6 +3,7 @@
 export interface DashboardUser {
   id: string;
   email: string;
+  role: string; // Add role property
   createdAt: string;
   updatedAt: string;
   lastLogin?: string;

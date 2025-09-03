@@ -9,7 +9,12 @@ import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import ConceptoForm from '../components/ConceptoForm';
 
+import { useAuth } from '../contexts/AuthContext';
+
 const ConceptosPage: React.FC = () => {
+  const { user } = useAuth();
+  const isViewer = user?.role === 'viewer';
+
   const [selectedCondo, setSelectedCondo] = useState<Condominium | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [conceptos, setConceptos] = useState<Concepto[]>([]);
@@ -227,12 +232,14 @@ const ConceptosPage: React.FC = () => {
   
   // Abrir formulario para editar
   const handleEdit = (concepto: Concepto) => {
+    if (isViewer) return;
     setEditingConcepto(concepto);
     setShowForm(true);
   };
   
   // Abrir diálogo de confirmación para eliminar
   const handleDelete = (concepto: Concepto) => {
+    if (isViewer) return;
     setConceptoToDelete(concepto);
     setShowDeleteConfirm(true);
   };
@@ -430,7 +437,8 @@ const ConceptosPage: React.FC = () => {
                     setEditingConcepto(undefined);
                     setShowForm(true);
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
+                  className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center ${isViewer ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={isViewer}
                 >
                   <Plus size={16} className="mr-2" />
                   Nuevo Concepto
@@ -479,7 +487,7 @@ const ConceptosPage: React.FC = () => {
                       <span>Exportar</span>
                     </button>
                     <label 
-                      className="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center text-sm cursor-pointer"
+                      className={`px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center text-sm cursor-pointer ${isViewer ? 'opacity-50 cursor-not-allowed' : ''}`}
                       title="Importar desde Excel"
                     >
                       <Upload size={16} className="mr-1" />
@@ -490,6 +498,7 @@ const ConceptosPage: React.FC = () => {
                         onChange={handleFileImport}
                         className="hidden"
                         ref={fileInputRef}
+                        disabled={isViewer}
                       />
                     </label>
                   </div>
@@ -549,12 +558,14 @@ const ConceptosPage: React.FC = () => {
                             <button 
                               className="text-blue-600 hover:text-blue-900 mr-3 focus:outline-none"
                               onClick={() => handleEdit(concepto)}
+                              disabled={isViewer}
                             >
                               <Edit size={18} />
                             </button>
                             <button 
                               className="text-red-600 hover:text-red-900 focus:outline-none"
                               onClick={() => handleDelete(concepto)}
+                              disabled={isViewer}
                             >
                               <Trash2 size={18} />
                             </button>

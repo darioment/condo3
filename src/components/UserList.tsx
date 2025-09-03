@@ -9,9 +9,10 @@ interface UserListProps {
   loading: boolean;
   onEdit: (user: DashboardUser) => void;
   onDelete: (user: DashboardUser) => void;
+  isViewer?: boolean;
 }
 
-const UserList: React.FC<UserListProps> = ({ users, loading, onEdit, onDelete }) => {
+const UserList: React.FC<UserListProps> = ({ users, loading, onEdit, onDelete, isViewer }) => {
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Nunca';
     try {
@@ -111,14 +112,16 @@ const UserList: React.FC<UserListProps> = ({ users, loading, onEdit, onDelete })
                     <div className="flex justify-end space-x-2">
                       <button
                         onClick={() => onEdit(user)}
-                        className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                        disabled={isViewer}
+                        className={`text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors ${isViewer ? 'opacity-50 cursor-not-allowed' : ''}`}
                         title="Editar usuario"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => onDelete(user)}
-                        className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
+                        disabled={isViewer}
+                        className={`text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors ${isViewer ? 'opacity-50 cursor-not-allowed' : ''}`}
                         title="Eliminar usuario"
                       >
                         <Trash2 className="h-4 w-4" />

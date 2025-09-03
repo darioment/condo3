@@ -13,6 +13,7 @@ interface ConceptoRowProps {
   monthlyTotals?: Record<string, number>;
   onDeleteConceptoGastos: (conceptoId: string, conceptoNombre: string) => void;
   onEditConcepto: (concepto: Concepto) => void;
+  isViewer?: boolean;
 }
 
 const ConceptoRow: React.FC<ConceptoRowProps> = ({
@@ -23,7 +24,8 @@ const ConceptoRow: React.FC<ConceptoRowProps> = ({
   totalAmount = 0,
   monthlyTotals = {},
   onDeleteConceptoGastos,
-  onEditConcepto
+  onEditConcepto,
+  isViewer
 }) => {
   // Create a map of gastos by month for quick lookup
   const gastosByMonth = gastos.reduce((acc, gasto) => {
@@ -48,6 +50,7 @@ const ConceptoRow: React.FC<ConceptoRowProps> = ({
             }}
             className="text-blue-600 hover:text-blue-800 opacity-0 group-hover:opacity-100 transition-opacity"
             title={`Editar concepto ${concepto.nombre}`}
+            disabled={isViewer}
           >
             <Edit size={18} />
           </button>
@@ -59,6 +62,7 @@ const ConceptoRow: React.FC<ConceptoRowProps> = ({
           }}
           className="text-red-600 hover:text-red-800 opacity-0 group-hover:opacity-100 transition-opacity"
           title={`Eliminar todos los gastos de ${concepto.nombre} para este año`}
+          disabled={isViewer}
         >
           <Trash2 size={18} />
         </button>
@@ -73,8 +77,8 @@ const ConceptoRow: React.FC<ConceptoRowProps> = ({
         return (
           <td 
             key={month} 
-            onClick={() => onGastoClick(concepto, month, isPaid)}
-            className="px-3 py-4 whitespace-nowrap text-sm text-center cursor-pointer border-l border-gray-100"
+            onClick={() => !isViewer && onGastoClick(concepto, month, isPaid)}
+            className={`px-3 py-4 whitespace-nowrap text-sm text-center border-l border-gray-100 ${!isViewer ? 'cursor-pointer' : ''}`}
           >
             {isPaid ? (
               <div className="text-green-600 font-medium">

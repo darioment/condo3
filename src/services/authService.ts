@@ -139,6 +139,7 @@ class AuthServiceImpl implements AuthService {
     return {
       id: dbUser.id,
       email: dbUser.email,
+      role: dbUser.role, // Add role property
       createdAt: dbUser.created_at,
       updatedAt: dbUser.updated_at,
       lastLogin: dbUser.last_login

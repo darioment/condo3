@@ -7,7 +7,12 @@ import CondoSelect from '../components/CondoSelect';
 import { supabase } from '../lib/supabase';
 import { toast } from 'react-toastify';
 
+import { useAuth } from '../contexts/AuthContext';
+
 const PaymentTypesPage: React.FC = () => {
+  const { user } = useAuth();
+  const isViewer = user?.role === 'viewer';
+
   const [paymentTypes, setPaymentTypes] = useState<PaymentType[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCondo, setSelectedCondo] = useState<Condominium | null>(null);
@@ -278,6 +283,7 @@ const PaymentTypesPage: React.FC = () => {
   
   // Abrir formulario para crear nuevo tipo de pago
   const handleNewType = async () => {
+    if (isViewer) return;
     if (!selectedCondo) {
       toast.error('Debe seleccionar un condominio');
       return;
@@ -294,6 +300,7 @@ const PaymentTypesPage: React.FC = () => {
   
   // Abrir formulario para editar
   const handleEdit = async (paymentType: PaymentType) => {
+    if (isViewer) return;
     setEditingPaymentType(paymentType);
     setShowForm(true);
 
@@ -329,6 +336,7 @@ const PaymentTypesPage: React.FC = () => {
   
   // Abrir diálogo de confirmación para eliminar
   const handleDelete = (paymentType: PaymentType) => {
+    if (isViewer) return;
     setTypeToDelete(paymentType);
     setShowDeleteConfirm(true);
   };
@@ -358,7 +366,7 @@ const PaymentTypesPage: React.FC = () => {
         <button 
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
           onClick={handleNewType}
-            disabled={!selectedCondo}
+            disabled={!selectedCondo || isViewer}
         >
           <Plus size={18} className="mr-1" />
           <span>Nuevo Tipo</span>
@@ -397,12 +405,14 @@ const PaymentTypesPage: React.FC = () => {
                     <button 
                       className="text-blue-600 hover:text-blue-900 focus:outline-none"
                       onClick={() => handleEdit(type)}
+                      disabled={isViewer}
                     >
                       <Edit size={18} />
                     </button>
                     <button 
                       className="text-red-600 hover:text-red-900 focus:outline-none"
                       onClick={() => handleDelete(type)}
+                      disabled={isViewer}
                     >
                       <Trash2 size={18} />
                     </button>
